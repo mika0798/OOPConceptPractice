@@ -1,6 +1,6 @@
 abstract class Instrument{
     String name;
-    protected int year;
+    int year;
 
     Instrument(String name, int year) {
         this.name = name;
