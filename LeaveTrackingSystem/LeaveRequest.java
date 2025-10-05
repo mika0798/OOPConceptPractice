@@ -1,6 +1,8 @@
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.*;
+
 
 interface Approvable {
     void approve(Employee approverName);
@@ -14,6 +16,11 @@ public class LeaveRequest implements Approvable {
     private String endDate;
     private String reason;
     private String status; //"Pending", "Approved", "Denied"
+    private ArrayList<LeaveRequest> leaveHistory =  new ArrayList<>();
+    private HashSet<String> departmentWithPendingRequests = new HashSet<>();
+    private HashSet<String> departmentWithApprovedRequests = new HashSet<>();
+    private HashMap<Integer, Employee> employeeDirectory =  new HashMap<>();
+    private Queue<LeaveRequest> pendingRequest = new LinkedList<>();
 
     public LeaveRequest(int requestID, Employee employee, String startDate, String endDate, String reason) {
         this.requestID = requestID;
@@ -64,6 +71,10 @@ public class LeaveRequest implements Approvable {
         this.status = status;
     }
 
+    public Employee getEmployee() {
+        return employee;
+    }
+
     public boolean processRequest() {
         System.out.println("Processing generic request...");
         return true;
@@ -83,6 +94,88 @@ public class LeaveRequest implements Approvable {
 
         Duration duration = Duration.between(startDateTime, endDateTime);
         return (int) duration.toDays();
+    }
+
+    public void addLeaveRequest(LeaveRequest leaveRequest) {
+        leaveHistory.add(leaveRequest);
+    }
+
+    public ArrayList<LeaveRequest> getLeaveHistory() {
+        return leaveHistory;
+    }
+
+    public LeaveRequest getLeaveRequestById(int requestID) {
+        for (LeaveRequest leaveRequest : leaveHistory) {
+            if (leaveRequest.getRequestID() == requestID) {
+                return leaveRequest;
+            }
+        }
+        return null;
+    }
+
+    public void updateDepartmentWithPendingRequests() {
+        departmentWithPendingRequests.clear();
+        for (LeaveRequest leaveRequest : leaveHistory) {
+            if(leaveRequest.getStatus().equals("Pending")) {
+                departmentWithPendingRequests.add(leaveRequest.getEmployee().getDepartment());
+            }
+        }
+    }
+
+    public boolean hasPendingRequests(String department) {
+        return departmentWithPendingRequests.contains(department);
+    }
+
+    public void updateDepartmentWithApprovedRequests() {
+        departmentWithApprovedRequests.clear();
+        for (LeaveRequest leaveRequest : leaveHistory) {
+            if(leaveRequest.getStatus().equals("Approved")) {
+                departmentWithApprovedRequests.add(leaveRequest.getEmployee().getDepartment());
+            }
+        }
+    }
+
+    public boolean hasApprovedRequests(String department) {
+        return departmentWithApprovedRequests.contains(department);
+    }
+
+    public void addEmployee(Employee employee) {
+        employeeDirectory.put(employee.getEmployeeId(),employee);
+    }
+
+    public Employee getEmployeeById(int employeeId) {
+        if (employeeDirectory.containsKey(employeeId)) {
+            return employeeDirectory.get(employeeId);
+        }
+        return null;
+    }
+
+    public boolean removeEmployee(int employeeId) {
+        if (employeeDirectory.containsKey(employeeId)) {
+            employeeDirectory.remove(employeeId);
+            return true;
+        }
+        return false;
+    }
+
+    public void addPendingRequest(LeaveRequest leaveRequest) {
+        if (leaveRequest.getStatus().equals("Pending")) {
+            pendingRequest.add(leaveRequest);
+        } else {
+            System.out.println("This request status is not pending");
+        }
+    }
+
+    public LeaveRequest getNextRequest() {
+        return pendingRequest.poll();
+    }
+
+    public int getPendingRequestCount() {
+        return pendingRequest.size();
+    }
+
+    public boolean hasPendingRequests() {
+        return !pendingRequest.isEmpty();
     }
 
     @Override
